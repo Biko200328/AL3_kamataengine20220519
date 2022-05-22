@@ -9,6 +9,7 @@
 #include "Sprite.h"
 #include "ViewProjection.h"
 #include "WorldTransform.h"
+#include "DebugCamera.h"
 
 /// <summary>
 /// ゲームシーン
@@ -50,4 +51,26 @@ class GameScene {
 	/// <summary>
 	/// ゲームシーン用
 	/// </summary>
+	
+	//テクスチャハンドル
+	uint32_t textureHandle_ = 0;
+
+	//3Dモデル
+	Model* model_ = nullptr;
+
+	//ワールドトランスフォーム
+	WorldTransform worldTransform_;
+
+	//ビュープロジェクション
+	ViewProjection viewProjection_;
+
+	//デバッグカメラ
+	DebugCamera* debugCamera_ = nullptr;
+
+	//度数法をラジアンに変更
+	float ChangeRadian(float frequency)
+	{
+		float pi = 3.14159265359f;
+		return frequency * pi / 180;
+	}
 };
