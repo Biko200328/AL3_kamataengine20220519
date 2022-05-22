@@ -13,12 +13,6 @@ GameScene::GameScene()
 	model_ = Model::Create();
 	//デバッグカメラの生成
 	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
-	//乱数シード生成器
-	std::random_device seed_gen;
-	//メルセンヌ・ツイスターの乱数エンジン
-	std::mt19937_64 engine(seed_gen());
-	//乱数範囲の指定
-	std::uniform_real_distribution<float> dist(-10.0f, 10.0f);
 }
 
 GameScene::~GameScene()
@@ -34,8 +28,75 @@ void GameScene::Initialize() {
 	audio_ = Audio::GetInstance();
 	debugText_ = DebugText::GetInstance();
 
-	//ワールドトランスフォームの初期化
-	worldTransform_.Initialize();
+	//乱数シード生成器
+	std::random_device seed_gen;
+	//メルセンヌ・ツイスターの乱数エンジン
+	std::mt19937_64 engine(seed_gen());
+	//乱数範囲の指定 (回転角用)
+	std::uniform_real_distribution<float> rotDist(0.0f, ChangeRadian(360));
+	//乱数範囲の指定 (座標用)
+	std::uniform_real_distribution<float> posDist(-10.0f, 10.0f);
+
+	//範囲forで全てのワールドトランスフォームを順に処理する
+	for (WorldTransform& worldTransform : worldTransforms_)
+	{
+		//ワールドトランスフォームの初期化
+		worldTransform.Initialize();
+
+		//スケーリングを設定
+		worldTransform.scale_ = { 1.0f,1.0f,1.0f };
+		//スケーリング行列を宣言
+		Matrix4 matScale;
+		//スケーリング倍率を行列に設定
+		matScale.m[0][0] = worldTransform.scale_.x;
+		matScale.m[1][1] = worldTransform.scale_.y;
+		matScale.m[2][2] = worldTransform.scale_.z;
+		matScale.m[3][3] = 1.0f;
+
+		//回転角を乱数で設定
+		worldTransform.rotation_ = { rotDist(engine),rotDist(engine), rotDist(engine) };
+		//合成用回転行列を宣言
+		Matrix4 matRot;
+		//各軸回転行列を宣言
+		Matrix4 matRotX, matRotY, matRotZ;
+		//X
+		matRotX.m[0][0] = 1.0f;
+		matRotX.m[1][1] = cos(worldTransform.rotation_.x);
+		matRotX.m[1][2] = sin(worldTransform.rotation_.x);
+		matRotX.m[2][1] = -sin(worldTransform.rotation_.x);
+		matRotX.m[2][2] = cos(worldTransform.rotation_.x);
+		matRotX.m[3][3] = 1.0f;
+		//Y
+		matRotY.m[0][0] = cos(worldTransform.rotation_.y);
+		matRotY.m[0][2] = -sin(worldTransform.rotation_.y);
+		matRotY.m[1][1] = 1.0f;
+		matRotY.m[2][0] = sin(worldTransform.rotation_.y);
+		matRotY.m[2][2] = cos(worldTransform.rotation_.y);
+		matRotY.m[3][3] = 1.0f;
+		//Z
+		matRotZ.m[0][0] = cos(worldTransform.rotation_.z);
+		matRotZ.m[0][1] = sin(worldTransform.rotation_.z);
+		matRotZ.m[1][0] = -sin(worldTransform.rotation_.z);
+		matRotZ.m[1][1] = cos(worldTransform.rotation_.z);
+		matRotZ.m[2][2] = 1.0f;
+		matRotZ.m[3][3] = 1.0f;
+		//合成
+		matRot = matRotZ *= matRotX *= matRotY;
+
+		//平行移動(座標)を乱数で設定
+		worldTransform.translation_ = { posDist(engine),posDist(engine), posDist(engine) };
+		//平行移動行列を宣言
+		Matrix4 matTrans = MathUtility::Matrix4Identity();
+		matTrans.m[3][0] = worldTransform.translation_.x;
+		matTrans.m[3][1] = worldTransform.translation_.y;
+		matTrans.m[3][2] = worldTransform.translation_.z;
+
+		//スケーリング、回転、平行移動を合成した行列を計算してワールドトランスフォームに代入
+		worldTransform.matWorld_ = MathUtility::Matrix4Identity();
+		worldTransform.matWorld_ = matScale *= matRot *= matTrans;
+
+		worldTransform.TransferMatrix();
+	}
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
 	//軸方向表示の表示を有効にする
@@ -95,21 +156,21 @@ void GameScene::Initialize() {
 	//worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
 	//worldTransform_.matWorld_ *= matRot;
 
-	//Translation
-	//X,Y,Z軸周りの平行移動を設定
-	worldTransform_.translation_ = { 3,3,3 };
-	//平行移動行列を宣言
-	Matrix4 matTrans = MathUtility::Matrix4Identity();
+	////Translation
+	////X,Y,Z軸周りの平行移動を設定
+	//worldTransform_.translation_ = { 3,3,3 };
+	////平行移動行列を宣言
+	//Matrix4 matTrans = MathUtility::Matrix4Identity();
 
-	matTrans.m[3][0] = worldTransform_.translation_.x;
-	matTrans.m[3][1] = worldTransform_.translation_.y;
-	matTrans.m[3][2] = worldTransform_.translation_.z;
+	//matTrans.m[3][0] = worldTransform_.translation_.x;
+	//matTrans.m[3][1] = worldTransform_.translation_.y;
+	//matTrans.m[3][2] = worldTransform_.translation_.z;
 
-	worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
-	worldTransform_.matWorld_ *= matTrans;
+	//worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
+	//worldTransform_.matWorld_ *= matTrans;
 
-	//行列の転送
-	worldTransform_.TransferMatrix();
+	////行列の転送
+	//worldTransform_.TransferMatrix();
 }
 
 void GameScene::Update()
@@ -145,7 +206,12 @@ void GameScene::Draw() {
 	/// </summary>
 
 	//3Dモデル描画
-	model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
+	/*model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);*/
+
+	for (WorldTransform& worldTransform : worldTransforms_)
+	{
+		model_->Draw(worldTransform, debugCamera_->GetViewProjection(), textureHandle_);
+	}
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
