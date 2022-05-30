@@ -20,15 +20,15 @@ public:
 
 	//scale
 	void SetScale(WorldTransform& worldTransform, float X, float Y, float Z);
-	/*void ChangeScale(WorldTransform worldTransform);*/
+	void ChangeScale(WorldTransform worldTransform);
 
 	//rotation
 	void SetRot(WorldTransform& worldTransform, float X, float Y, float Z);
-	/*void ChangeRot(WorldTransform worldTransform);*/
+	void ChangeRot(WorldTransform worldTransform);
 
 	//transform
 	void SetTrans(WorldTransform& worldTransform, float X, float Y, float Z);
-	/*void ChangeTrans(WorldTransform worldTransform);*/
+	void ChangeTrans(WorldTransform worldTransform);
 
 	void UpdateMatrix(WorldTransform& worldTransform);
 };

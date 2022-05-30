@@ -42,60 +42,10 @@ void GameScene::Initialize() {
 	{
 		//ワールドトランスフォームの初期化
 		worldTransform.Initialize();
-
-		//スケーリングを設定
-		worldTransform.scale_ = { 1.0f,1.0f,1.0f };
-		//スケーリング行列を宣言
-		Matrix4 matScale;
-		//スケーリング倍率を行列に設定
-		matScale.m[0][0] = worldTransform.scale_.x;
-		matScale.m[1][1] = worldTransform.scale_.y;
-		matScale.m[2][2] = worldTransform.scale_.z;
-		matScale.m[3][3] = 1.0f;
-
-		//回転角を乱数で設定
-		worldTransform.rotation_ = { rotDist(engine),rotDist(engine), rotDist(engine) };
-		//合成用回転行列を宣言
-		Matrix4 matRot;
-		//各軸回転行列を宣言
-		Matrix4 matRotX, matRotY, matRotZ;
-		//X
-		matRotX.m[0][0] = 1.0f;
-		matRotX.m[1][1] = cos(worldTransform.rotation_.x);
-		matRotX.m[1][2] = sin(worldTransform.rotation_.x);
-		matRotX.m[2][1] = -sin(worldTransform.rotation_.x);
-		matRotX.m[2][2] = cos(worldTransform.rotation_.x);
-		matRotX.m[3][3] = 1.0f;
-		//Y
-		matRotY.m[0][0] = cos(worldTransform.rotation_.y);
-		matRotY.m[0][2] = -sin(worldTransform.rotation_.y);
-		matRotY.m[1][1] = 1.0f;
-		matRotY.m[2][0] = sin(worldTransform.rotation_.y);
-		matRotY.m[2][2] = cos(worldTransform.rotation_.y);
-		matRotY.m[3][3] = 1.0f;
-		//Z
-		matRotZ.m[0][0] = cos(worldTransform.rotation_.z);
-		matRotZ.m[0][1] = sin(worldTransform.rotation_.z);
-		matRotZ.m[1][0] = -sin(worldTransform.rotation_.z);
-		matRotZ.m[1][1] = cos(worldTransform.rotation_.z);
-		matRotZ.m[2][2] = 1.0f;
-		matRotZ.m[3][3] = 1.0f;
-		//合成
-		matRot = matRotZ *= matRotX *= matRotY;
-
-		//平行移動(座標)を乱数で設定
-		worldTransform.translation_ = { posDist(engine),posDist(engine), posDist(engine) };
-		//平行移動行列を宣言
-		Matrix4 matTrans = MathUtility::Matrix4Identity();
-		matTrans.m[3][0] = worldTransform.translation_.x;
-		matTrans.m[3][1] = worldTransform.translation_.y;
-		matTrans.m[3][2] = worldTransform.translation_.z;
-
-		//スケーリング、回転、平行移動を合成した行列を計算してワールドトランスフォームに代入
-		worldTransform.matWorld_ = MathUtility::Matrix4Identity();
-		worldTransform.matWorld_ = matScale *= matRot *= matTrans;
-
-		worldTransform.TransferMatrix();
+		matrix.SetScale(worldTransform, 1, 1, 1);
+		matrix.SetRot(worldTransform,rotDist(engine),rotDist(engine), rotDist(engine));
+		matrix.SetTrans(worldTransform,posDist(engine), posDist(engine), posDist(engine));
+		matrix.UpdateMatrix(worldTransform);
 	}
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
@@ -176,6 +126,15 @@ void GameScene::Initialize() {
 void GameScene::Update()
 {
 	debugCamera_->Update();
+	Vector3 move{ 0,-0.2f,0 };
+	if (input_->PushKey(DIK_1))
+	{
+		for (WorldTransform& worldTransform : worldTransforms_)
+		{
+			worldTransform.rotation_ += move;
+			matrix.UpdateMatrix(worldTransform);
+		}
+	}
 }
 
 void GameScene::Draw() {

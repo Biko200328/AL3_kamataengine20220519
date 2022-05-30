@@ -26,78 +26,73 @@ void Matrix::InitMatrix(Matrix4& m)
 void Matrix::SetScale(WorldTransform& worldTransform, float X, float Y, float Z)
 {
 	//スケーリングを設定
-	worldTransform.scale_ = { 1.0f,1.0f,1.0f };
+	worldTransform.scale_ = { X,Y,Z };
+}
 
-	//スケーリング倍率を行列に設定
+void Matrix::ChangeScale(WorldTransform worldTransform)
+{
 	matResult.Scale.m[0][0] = worldTransform.scale_.x;
 	matResult.Scale.m[1][1] = worldTransform.scale_.y;
 	matResult.Scale.m[2][2] = worldTransform.scale_.z;
-	matResult.Scale.m[3][3] = 1.0f;
+	matResult.Scale.m[3][3] = 1;
 }
-
-//void Matrix::ChangeScale(WorldTransform worldTransform)
-//{
-//	matResult.Scale.m[0][0] = worldTransform.scale_.x;
-//	matResult.Scale.m[1][1] = worldTransform.scale_.y;
-//	matResult.Scale.m[2][2] = worldTransform.scale_.z;
-//	matResult.Scale.m[3][3] = 1;
-//}
 
 void Matrix::SetRot(WorldTransform& worldTransform, float X, float Y, float Z)
 {
 	worldTransform.rotation_ = { X,Y,Z };
+}
 
-	//各軸回転行列を宣言
+void Matrix::ChangeRot(WorldTransform worldTransform)
+{
+	// 回転行列 宣言
 	Matrix4 matRotX, matRotY, matRotZ;
 
-	//X
-	matRotX.m[0][0] = 1.0f;
+	matRotX.m[0][0] = 1;
 	matRotX.m[1][1] = cos(worldTransform.rotation_.x);
 	matRotX.m[1][2] = sin(worldTransform.rotation_.x);
 	matRotX.m[2][1] = -sin(worldTransform.rotation_.x);
 	matRotX.m[2][2] = cos(worldTransform.rotation_.x);
-	matRotX.m[3][3] = 1.0f;
-	//Y
+	matRotX.m[3][3] = 1;
+
 	matRotY.m[0][0] = cos(worldTransform.rotation_.y);
 	matRotY.m[0][2] = -sin(worldTransform.rotation_.y);
-	matRotY.m[1][1] = 1.0f;
+	matRotY.m[1][1] = 1;
 	matRotY.m[2][0] = sin(worldTransform.rotation_.y);
 	matRotY.m[2][2] = cos(worldTransform.rotation_.y);
-	matRotY.m[3][3] = 1.0f;
-	//Z
+	matRotY.m[3][3] = 1;
+
 	matRotZ.m[0][0] = cos(worldTransform.rotation_.z);
 	matRotZ.m[0][1] = sin(worldTransform.rotation_.z);
 	matRotZ.m[1][0] = -sin(worldTransform.rotation_.z);
 	matRotZ.m[1][1] = cos(worldTransform.rotation_.z);
-	matRotZ.m[2][2] = 1.0f;
-	matRotZ.m[3][3] = 1.0f;
+	matRotZ.m[2][2] = 1;
+	matRotZ.m[3][3] = 1;
 
-	//合成
-	matResult.Rot = matRotZ *= matRotX *= matRotY;
+	// 回転行列 合成
+	matResult.Rot = matRotZ;
+	matResult.Rot *= matRotX;
+	matResult.Rot *= matRotY;
 }
-
-
-
 
 void Matrix::SetTrans(WorldTransform& worldTransform, float X, float Y, float Z)
 {
 	worldTransform.translation_ = { X,Y,Z };
+}
 
-	//平行移動行列を宣言
+void Matrix::ChangeTrans(WorldTransform worldTransform)
+{
 	matResult.Trans.m[3][0] = worldTransform.translation_.x;
 	matResult.Trans.m[3][1] = worldTransform.translation_.y;
 	matResult.Trans.m[3][2] = worldTransform.translation_.z;
 }
 
-//void Matrix::ChangeTrans(WorldTransform worldTransform)
-//{
-//	matResult.Trans.m[3][0] = worldTransform.translation_.x;
-//	matResult.Trans.m[3][1] = worldTransform.translation_.y;
-//	matResult.Trans.m[3][2] = worldTransform.translation_.z;
-//}
-
 void Matrix::UpdateMatrix(WorldTransform& worldTransform)
 {
+	// 行列 合成
+	ChangeScale(worldTransform);
+	ChangeRot(worldTransform);
+	ChangeTrans(worldTransform);
+
 	InitMatrix(worldTransform.matWorld_);
 
 	worldTransform.matWorld_ = matResult.Scale;

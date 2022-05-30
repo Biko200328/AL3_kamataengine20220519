@@ -10,6 +10,7 @@
 #include "ViewProjection.h"
 #include "WorldTransform.h"
 #include "DebugCamera.h"
+#include "Matrix.h"
 
 /// <summary>
 /// ゲームシーン
@@ -73,4 +74,7 @@ class GameScene {
 		float pi = 3.14159265359f;
 		return frequency * pi / 180;
 	}
+
+	//マトリックス
+	Matrix matrix;
 };
