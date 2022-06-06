@@ -77,4 +77,12 @@ class GameScene {
 
 	//マトリックス
 	Matrix matrix;
+
+public:
+	enum PartId {
+		Root,	//大元
+		Head,	//頭
+		ArmL,	//左腕
+		ArmR,	//右腕
+	};
 };

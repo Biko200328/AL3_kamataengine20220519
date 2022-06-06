@@ -4,6 +4,7 @@
 #include "AxisIndicator.h"
 #include "PrimitiveDrawer.h"
 #include <random>
+#include"XMFLOAT3.h"
 
 GameScene::GameScene()
 {
@@ -18,7 +19,6 @@ GameScene::GameScene()
 GameScene::~GameScene()
 {
 	delete model_;
-	delete debugCamera_;
 }
 
 void GameScene::Initialize() {
@@ -37,59 +37,107 @@ void GameScene::Initialize() {
 	//乱数範囲の指定 (座標用)
 	std::uniform_real_distribution<float> posDist(-10.0f, 10.0f);
 
-	//範囲forで全てのワールドトランスフォームを順に処理する
-	for (WorldTransform& worldTransform : worldTransforms_)
-	{
-		//ワールドトランスフォームの初期化
-		worldTransform.Initialize();
-		matrix.SetScale(worldTransform, 1, 1, 1);
-		matrix.SetRot(worldTransform,rotDist(engine),rotDist(engine), rotDist(engine));
-		matrix.SetTrans(worldTransform,posDist(engine), posDist(engine), posDist(engine));
-		matrix.UpdateMatrix(worldTransform);
-	}
+	// 3Dモデルの生成
+	model_ = Model::Create();
 
-	//カメラ視点座標を設定
-	viewProjection_.eye = { 0,0,-10 };
-	//ビュープロジェクションの初期化
+	//大元
+	worldTransforms_[PartId::Root].Initialize();
+
+	//頭
+	worldTransforms_[PartId::Head].translation_ = { 0, 0, -2.0f };
+	worldTransforms_[PartId::Head].parent_ = &worldTransforms_[PartId::Root];
+	worldTransforms_[PartId::Head].Initialize();
+
+	//左腕
+	worldTransforms_[PartId::ArmL].translation_ = { -2.0f, 0, 0 };
+	worldTransforms_[PartId::ArmL].parent_ = &worldTransforms_[PartId::Root];
+	worldTransforms_[PartId::ArmL].Initialize();
+
+	//右腕
+	worldTransforms_[PartId::ArmR].translation_ = { 2.0f, 0, 0 };
+	worldTransforms_[PartId::ArmR].parent_ = &worldTransforms_[PartId::Root];
+	worldTransforms_[PartId::ArmR].Initialize();
+
+	//置物
+	worldTransforms_[96].translation_ = { 0, 0, 0 };
+	worldTransforms_[96].Initialize();
+
+	worldTransforms_[97].translation_ = { 20.0f, 0, 20.0f };
+	worldTransforms_[97].Initialize();
+
+	worldTransforms_[98].translation_ = { 0, 0, 20.0f };
+	worldTransforms_[98].Initialize();
+
+	worldTransforms_[99].translation_ = { 20.0f, 0, 0 };
+	worldTransforms_[99].Initialize();
+
+	viewProjection_.eye = { 0, 10, -20 };
+	viewProjection_.target = worldTransforms_[PartId::Root].translation_;
+
 	viewProjection_.Initialize();
-	//軸方向表示の表示を有効にする
-	AxisIndicator::GetInstance()->SetVisible(true);
-	//軸方向表示が参照するビュープロジェクションを指定する(アドレス渡し)
-	AxisIndicator::GetInstance()->SetTargetViewProjection(&viewProjection_);
-	//ライン描画が参照するビュープロジェクションを指定する(アドレス渡し)
-	PrimitiveDrawer::GetInstance()->SetViewProjection(&debugCamera_->GetViewProjection());
 }
 
 void GameScene::Update()
 {
-	debugCamera_->Update();
-	
-	//視点の移動ベクトル
-	Vector3 move = { 0,0,0 };
-
-	//視点の移動速さ
-	const float kEyeSpeed = 0.2f;
-
-	//押した方向で移動ベクトルを変更
-	if (input_->PushKey(DIK_W))
-	{
-		move.z += kEyeSpeed;
+	//プレイヤーの回転
+	XMFLOAT3 move = { 0.0f, 0.0f, 0.0f };
+	const float RotSpeed = 0.01f;
+	if (input_->PushKey(DIK_LEFT)) {
+		move = { 0, -RotSpeed, 0 };
 	}
-	else if (input_->PushKey(DIK_S))
-	{
-		move.z -= kEyeSpeed;
+	else if (input_->PushKey(DIK_RIGHT)) {
+		move = { 0, RotSpeed, 0 };
+	}
+	worldTransforms_[PartId::Root].rotation_.y += move.y;
+
+	XMFLOAT3 frontVec = { 0.0f, 0.0f, 1.0f };
+	XMFLOAT3 resultVec = { 0.0f, 0.0f, 0.0f };
+
+	//y軸回転をx,zに落とし込む
+	resultVec.x = (
+		cos(worldTransforms_[PartId::Root].rotation_.y) * frontVec.x +
+		sin(worldTransforms_[PartId::Root].rotation_.y) * frontVec.z);
+	resultVec.z =
+		(-sinf(worldTransforms_[PartId::Root].rotation_.y) * frontVec.x +
+			cosf(worldTransforms_[PartId::Root].rotation_.y) * frontVec.z);
+
+	//プレイヤーの座標移動
+	const float kCharacterSpeed = 0.1f;
+	if (input_->PushKey(DIK_UP)) {
+		worldTransforms_[PartId::Root].translation_.x -= kCharacterSpeed * resultVec.x;
+		worldTransforms_[PartId::Root].translation_.z -= kCharacterSpeed * resultVec.z;
+	}
+	else if (input_->PushKey(DIK_DOWN)) {
+		worldTransforms_[PartId::Root].translation_.x += kCharacterSpeed * resultVec.x;
+		worldTransforms_[PartId::Root].translation_.z += kCharacterSpeed * resultVec.z;
 	}
 
-	//視点移動(ベクトルの加算)
-	viewProjection_.eye += move;
+	//カメラのターゲットをプレイヤーにする
+	viewProjection_.target = worldTransforms_[PartId::Root].translation_;
+	//カメラの座標移動
+	const float cameraDis = 15.0f;
+	viewProjection_.eye.x = worldTransforms_[PartId::Root].translation_.x + cameraDis * resultVec.x;
+	viewProjection_.eye.y = 10.0f;
+	viewProjection_.eye.z = worldTransforms_[PartId::Root].translation_.z + cameraDis * resultVec.z;
 
-	//行列の再計算
+	//UpdateMatrix
+	worldTransforms_[PartId::Root].TransferMatrix();
+	worldTransforms_[PartId::Head].TransferMatrix();
+	worldTransforms_[PartId::ArmL].TransferMatrix();
+	worldTransforms_[PartId::ArmR].TransferMatrix();
+
 	viewProjection_.UpdateMatrix();
 
-	//デバッグ用表示
-	debugText_->SetPos(50, 50);
+	//テキスト
+	debugText_->SetPos(0, 0);
 	debugText_->Printf(
-		"eye:(%f,%f,%f)", viewProjection_.eye.x, viewProjection_.eye.y, viewProjection_.eye.z);
+		"player	x : %f	y : %f	z : %f", worldTransforms_->translation_.x, worldTransforms_->translation_.y,
+		worldTransforms_->translation_.z);
+
+	debugText_->SetPos(0, 30);
+	debugText_->Printf(
+		"camera	x : %f	y : %f	z : %f", viewProjection_.eye.x, viewProjection_.eye.y,
+		viewProjection_.eye.z);
 }
 
 void GameScene::Draw() {
@@ -122,10 +170,16 @@ void GameScene::Draw() {
 	//3Dモデル描画
 	/*model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);*/
 
-	for (WorldTransform& worldTransform : worldTransforms_)
-	{
-		model_->Draw(worldTransform, viewProjection_, textureHandle_);
-	}
+	model_->Draw(worldTransforms_[PartId::Root], viewProjection_, textureHandle_);
+	model_->Draw(worldTransforms_[PartId::Head], viewProjection_, textureHandle_);
+	model_->Draw(worldTransforms_[PartId::ArmL], viewProjection_, textureHandle_);
+	model_->Draw(worldTransforms_[PartId::ArmR], viewProjection_, textureHandle_);
+
+	model_->Draw(worldTransforms_[96], viewProjection_, textureHandle_);
+	model_->Draw(worldTransforms_[97], viewProjection_, textureHandle_);
+	model_->Draw(worldTransforms_[98], viewProjection_, textureHandle_);
+	model_->Draw(worldTransforms_[99], viewProjection_, textureHandle_);
+
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
