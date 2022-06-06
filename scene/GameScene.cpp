@@ -5,6 +5,7 @@
 #include "PrimitiveDrawer.h"
 #include <random>
 #include"XMFLOAT3.h"
+#include"MathUtility.h"
 
 GameScene::GameScene()
 {
@@ -90,6 +91,7 @@ void GameScene::Update()
 	{
 		Vector3 frontVec;
 		frontVec = viewProjection_.target -= viewProjection_.eye;
+		Vector3Normalize(frontVec);
 
 		if (input_->PushKey(DIK_W))
 		{
