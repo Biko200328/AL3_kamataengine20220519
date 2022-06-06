@@ -75,6 +75,8 @@ class GameScene {
 		return frequency * pi / 180;
 	}
 
+	bool isMoveChange;
+
 	//マトリックス
 	Matrix matrix;
 

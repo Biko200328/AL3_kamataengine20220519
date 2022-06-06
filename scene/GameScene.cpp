@@ -14,6 +14,7 @@ GameScene::GameScene()
 	model_ = Model::Create();
 	//デバッグカメラの生成
 	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
+	isMoveChange = false;
 }
 
 GameScene::~GameScene()
@@ -44,7 +45,7 @@ void GameScene::Initialize() {
 	worldTransforms_[PartId::Root].Initialize();
 
 	//頭
-	worldTransforms_[PartId::Head].translation_ = { 0, 0, -2.0f };
+	worldTransforms_[PartId::Head].translation_ = { 0, 0, 2.0f };
 	worldTransforms_[PartId::Head].parent_ = &worldTransforms_[PartId::Root];
 	worldTransforms_[PartId::Head].Initialize();
 
@@ -59,16 +60,16 @@ void GameScene::Initialize() {
 	worldTransforms_[PartId::ArmR].Initialize();
 
 	//置物
-	worldTransforms_[96].translation_ = { 0, 0, 0 };
+	worldTransforms_[96].translation_ = { 0.0, 0, 0 };
 	worldTransforms_[96].Initialize();
 
-	worldTransforms_[97].translation_ = { 20.0f, 0, 20.0f };
+	worldTransforms_[97].translation_ = { 0.0f, 0, 20.0f };
 	worldTransforms_[97].Initialize();
 
-	worldTransforms_[98].translation_ = { 0, 0, 20.0f };
+	worldTransforms_[98].translation_ = { 20.0f, 0, 0.0f };
 	worldTransforms_[98].Initialize();
 
-	worldTransforms_[99].translation_ = { 20.0f, 0, 0 };
+	worldTransforms_[99].translation_ = { 20.0f, 0, 20.0f };
 	worldTransforms_[99].Initialize();
 
 	viewProjection_.eye = { 0, 10, -20 };
@@ -79,65 +80,83 @@ void GameScene::Initialize() {
 
 void GameScene::Update()
 {
-	//プレイヤーの回転
-	XMFLOAT3 move = { 0.0f, 0.0f, 0.0f };
-	const float RotSpeed = 0.01f;
-	if (input_->PushKey(DIK_LEFT)) {
-		move = { 0, -RotSpeed, 0 };
-	}
-	else if (input_->PushKey(DIK_RIGHT)) {
-		move = { 0, RotSpeed, 0 };
-	}
-	worldTransforms_[PartId::Root].rotation_.y += move.y;
-
-	XMFLOAT3 frontVec = { 0.0f, 0.0f, 1.0f };
-	XMFLOAT3 resultVec = { 0.0f, 0.0f, 0.0f };
-
-	//y軸回転をx,zに落とし込む
-	resultVec.x = (
-		cos(worldTransforms_[PartId::Root].rotation_.y) * frontVec.x +
-		sin(worldTransforms_[PartId::Root].rotation_.y) * frontVec.z);
-	resultVec.z =
-		(-sinf(worldTransforms_[PartId::Root].rotation_.y) * frontVec.x +
-			cosf(worldTransforms_[PartId::Root].rotation_.y) * frontVec.z);
-
-	//プレイヤーの座標移動
-	const float kCharacterSpeed = 0.1f;
-	if (input_->PushKey(DIK_UP)) {
-		worldTransforms_[PartId::Root].translation_.x -= kCharacterSpeed * resultVec.x;
-		worldTransforms_[PartId::Root].translation_.z -= kCharacterSpeed * resultVec.z;
-	}
-	else if (input_->PushKey(DIK_DOWN)) {
-		worldTransforms_[PartId::Root].translation_.x += kCharacterSpeed * resultVec.x;
-		worldTransforms_[PartId::Root].translation_.z += kCharacterSpeed * resultVec.z;
+	if (input_->TriggerKey(DIK_Q))
+	{
+		if (!isMoveChange)isMoveChange = true;
+		else isMoveChange = false;
 	}
 
-	//カメラのターゲットをプレイヤーにする
-	viewProjection_.target = worldTransforms_[PartId::Root].translation_;
-	//カメラの座標移動
-	const float cameraDis = 15.0f;
-	viewProjection_.eye.x = worldTransforms_[PartId::Root].translation_.x + cameraDis * resultVec.x;
-	viewProjection_.eye.y = 10.0f;
-	viewProjection_.eye.z = worldTransforms_[PartId::Root].translation_.z + cameraDis * resultVec.z;
+	if (isMoveChange == false)
+	{
+		Vector3 frontVec;
+		frontVec = viewProjection_.target -= viewProjection_.eye;
+
+		if (input_->PushKey(DIK_W))
+		{
+			worldTransforms_[PartId::Root].translation_.x += ;
+		}
+	}
+
+	if (isMoveChange == true)	//バイオ歩き
+	{
+		//プレイヤーの回転
+		XMFLOAT3 move = { 0.0f,0.0f,0.0f };
+		const float RotSpeed = 0.05f;
+		if (input_->PushKey(DIK_A)) {
+			move = { 0, -RotSpeed, 0 };
+		}
+		else if (input_->PushKey(DIK_D)) {
+			move = { 0, RotSpeed, 0 };
+		}
+
+		worldTransforms_[PartId::Root].rotation_.y += move.y;
+
+		XMFLOAT3 frontVec = { 0.0f, 0.0f, -1.0f };
+		XMFLOAT3 resultVec = { 0.0f, 0.0f, 0.0f };
+
+		//y軸回転をx,zに落とし込む
+		resultVec.x = (
+			cos(worldTransforms_[PartId::Root].rotation_.y) * frontVec.x +
+			sin(worldTransforms_[PartId::Root].rotation_.y) * frontVec.z);
+		resultVec.z =
+			(-sinf(worldTransforms_[PartId::Root].rotation_.y) * frontVec.x +
+				cosf(worldTransforms_[PartId::Root].rotation_.y) * frontVec.z);
+
+		//プレイヤーの座標移動
+		const float kCharacterSpeed = 0.1f;
+		if (input_->PushKey(DIK_W)) {
+			worldTransforms_[PartId::Root].translation_.x -= kCharacterSpeed * resultVec.x;
+			worldTransforms_[PartId::Root].translation_.z -= kCharacterSpeed * resultVec.z;
+		}
+		else if (input_->PushKey(DIK_S)) {
+			worldTransforms_[PartId::Root].translation_.x += kCharacterSpeed * resultVec.x;
+			worldTransforms_[PartId::Root].translation_.z += kCharacterSpeed * resultVec.z;
+		}
+
+		//カメラのターゲットをプレイヤーにする
+		viewProjection_.target = worldTransforms_[PartId::Root].translation_;
+		//カメラの座標移動
+		const float cameraDis = 15.0f;
+		viewProjection_.eye.x = worldTransforms_[PartId::Root].translation_.x + cameraDis * resultVec.x;
+		viewProjection_.eye.y = 10.0f;
+		viewProjection_.eye.z = worldTransforms_[PartId::Root].translation_.z + cameraDis * resultVec.z;
+	}
 
 	//UpdateMatrix
-	worldTransforms_[PartId::Root].TransferMatrix();
-	worldTransforms_[PartId::Head].TransferMatrix();
-	worldTransforms_[PartId::ArmL].TransferMatrix();
-	worldTransforms_[PartId::ArmR].TransferMatrix();
+	matrix.UpdateMatrix(worldTransforms_[PartId::Root]);
+	matrix.UpdateMatrix(worldTransforms_[PartId::Head]);
+	matrix.UpdateMatrix(worldTransforms_[PartId::ArmL]);
+	matrix.UpdateMatrix(worldTransforms_[PartId::ArmR]);
+	matrix.UpdateMatrix(worldTransforms_[96]);
+	matrix.UpdateMatrix(worldTransforms_[97]);
+	matrix.UpdateMatrix(worldTransforms_[98]);
+	matrix.UpdateMatrix(worldTransforms_[99]);
 
 	viewProjection_.UpdateMatrix();
 
-	//テキスト
 	debugText_->SetPos(0, 0);
 	debugText_->Printf(
-		"player	x : %f	y : %f	z : %f", worldTransforms_->translation_.x, worldTransforms_->translation_.y,
-		worldTransforms_->translation_.z);
-
-	debugText_->SetPos(0, 30);
-	debugText_->Printf(
-		"camera	x : %f	y : %f	z : %f", viewProjection_.eye.x, viewProjection_.eye.y,
-		viewProjection_.eye.z);
+		"isMoveChange : %d", isMoveChange);
 }
 
 void GameScene::Draw() {
@@ -151,6 +170,7 @@ void GameScene::Draw() {
 
 	/// <summary>
 	/// ここに背景スプライトの描画処理を追加できる
+	/// 
 	/// </summary>
 
 	// スプライト描画後処理
@@ -179,7 +199,6 @@ void GameScene::Draw() {
 	model_->Draw(worldTransforms_[97], viewProjection_, textureHandle_);
 	model_->Draw(worldTransforms_[98], viewProjection_, textureHandle_);
 	model_->Draw(worldTransforms_[99], viewProjection_, textureHandle_);
-
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();

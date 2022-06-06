@@ -100,7 +100,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="scene\GameScene.cpp" />
-    <ClCompile Include="XMFLOAT3.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2d\DebugText.h" />
