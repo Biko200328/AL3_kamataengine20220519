@@ -47,94 +47,49 @@ void GameScene::Initialize() {
 		matrix.SetTrans(worldTransform,posDist(engine), posDist(engine), posDist(engine));
 		matrix.UpdateMatrix(worldTransform);
 	}
+
+	//カメラ視点座標を設定
+	viewProjection_.eye = { 0,0,-10 };
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
 	//軸方向表示の表示を有効にする
 	AxisIndicator::GetInstance()->SetVisible(true);
 	//軸方向表示が参照するビュープロジェクションを指定する(アドレス渡し)
-	AxisIndicator::GetInstance()->SetTargetViewProjection(&debugCamera_->GetViewProjection());
+	AxisIndicator::GetInstance()->SetTargetViewProjection(&viewProjection_);
 	//ライン描画が参照するビュープロジェクションを指定する(アドレス渡し)
 	PrimitiveDrawer::GetInstance()->SetViewProjection(&debugCamera_->GetViewProjection());
-
-	////Scale
-	////X,Y,Z 方向のスケーリングを設定
-	//worldTransform_.scale_ = { 2.0f,1.0f,1.0f };
-	////スケーリング行列を宣言
-	//Matrix4 matScale;
-
-	////スケーリング倍率を行列に設定
-	//matScale.m[0][0] = worldTransform_.scale_.x;
-	//matScale.m[1][1] = worldTransform_.scale_.y;
-	//matScale.m[2][2] = worldTransform_.scale_.z;
-	//matScale.m[3][3] = 1.0f;
-
-	//worldTransform_.matWorld_.IdentityMatrix4();
-	//worldTransform_.matWorld_ *= matScale;
-
-	////Rotate
-	////X,Y,Z軸周りの回転角を設定
-	//worldTransform_.rotation_ = { 0, 0, ChangeRadian(90.0f) };
-	////合成用回転行列を宣言
-	//Matrix4 matRot;
-	////各軸回転行列を宣言
-	//Matrix4 matRotX, matRotY, matRotZ;
-
-	//matRotX.m[0][0] = 1.0f;
-	//matRotX.m[1][1] = cos(worldTransform_.rotation_.x);
-	//matRotX.m[1][2] = sin(worldTransform_.rotation_.x);
-	//matRotX.m[2][1] = -sin(worldTransform_.rotation_.x);
-	//matRotX.m[2][2] = cos(worldTransform_.rotation_.x);
-	//matRotX.m[3][3] = 1.0f;
-
-	//matRotY.m[0][0] = cos(worldTransform_.rotation_.y);
-	//matRotY.m[0][2] = -sin(worldTransform_.rotation_.y);
-	//matRotY.m[1][1] = 1.0f;
-	//matRotY.m[2][0] = sin(worldTransform_.rotation_.y);
-	//matRotY.m[2][2] = cos(worldTransform_.rotation_.y);
-	//matRotY.m[3][3] = 1.0f;
-
-
-	//matRotZ.m[0][0] = cos(worldTransform_.rotation_.z);
-	//matRotZ.m[0][1] = sin(worldTransform_.rotation_.z);
-	//matRotZ.m[1][0] = -sin(worldTransform_.rotation_.z);
-	//matRotZ.m[1][1] = cos(worldTransform_.rotation_.z);
-	//matRotZ.m[2][2] = 1.0f;
-	//matRotZ.m[3][3] = 1.0f;
-
-	//matRot = matRotZ *= matRotX *= matRotY;
-
-	//worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
-	//worldTransform_.matWorld_ *= matRot;
-
-	////Translation
-	////X,Y,Z軸周りの平行移動を設定
-	//worldTransform_.translation_ = { 3,3,3 };
-	////平行移動行列を宣言
-	//Matrix4 matTrans = MathUtility::Matrix4Identity();
-
-	//matTrans.m[3][0] = worldTransform_.translation_.x;
-	//matTrans.m[3][1] = worldTransform_.translation_.y;
-	//matTrans.m[3][2] = worldTransform_.translation_.z;
-
-	//worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
-	//worldTransform_.matWorld_ *= matTrans;
-
-	////行列の転送
-	//worldTransform_.TransferMatrix();
 }
 
 void GameScene::Update()
 {
 	debugCamera_->Update();
-	Vector3 move{ 0,-0.2f,0 };
-	if (input_->PushKey(DIK_1))
+	
+	//視点の移動ベクトル
+	Vector3 move = { 0,0,0 };
+
+	//視点の移動速さ
+	const float kEyeSpeed = 0.2f;
+
+	//押した方向で移動ベクトルを変更
+	if (input_->PushKey(DIK_W))
 	{
-		for (WorldTransform& worldTransform : worldTransforms_)
-		{
-			worldTransform.rotation_ += move;
-			matrix.UpdateMatrix(worldTransform);
-		}
+		move.z += kEyeSpeed;
 	}
+	else if (input_->PushKey(DIK_S))
+	{
+		move.z -= kEyeSpeed;
+	}
+
+	//視点移動(ベクトルの加算)
+	viewProjection_.eye += move;
+
+	//行列の再計算
+	viewProjection_.UpdateMatrix();
+
+	//デバッグ用表示
+	debugText_->SetPos(50, 50);
+	debugText_->Printf(
+		"eye:(%f,%f,%f)", viewProjection_.eye.x, viewProjection_.eye.y, viewProjection_.eye.z);
 }
 
 void GameScene::Draw() {
@@ -169,7 +124,7 @@ void GameScene::Draw() {
 
 	for (WorldTransform& worldTransform : worldTransforms_)
 	{
-		model_->Draw(worldTransform, debugCamera_->GetViewProjection(), textureHandle_);
+		model_->Draw(worldTransform, viewProjection_, textureHandle_);
 	}
 
 	// 3Dオブジェクト描画後処理
@@ -184,22 +139,22 @@ void GameScene::Draw() {
 	/// ここに前景スプライトの描画処理を追加できる
 	/// </summary>
 
-	int maxLine = 32;
-	int size = 1;
-	for (int i = 0; i < maxLine; i++)
-	{
-		//X (Red)
-		PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, i * size, 0), Vector3(maxLine * size - size, i * size, 0), Vector4(1, 0, 0, 1));
-		PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, 0, i * size), Vector3(maxLine * size - size, 0, i * size), Vector4(1, 0, 0, 1));
+	//int maxLine = 32;
+	//int size = 1;
+	//for (int i = 0; i < maxLine; i++)
+	//{
+	//	//X (Red)
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, i * size, 0), Vector3(maxLine * size - size, i * size, 0), Vector4(1, 0, 0, 1));
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, 0, i * size), Vector3(maxLine * size - size, 0, i * size), Vector4(1, 0, 0, 1));
 
-		//Y (Green)
-		PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(i * size, 0, 0), Vector3(i * size, maxLine * size - size, 0), Vector4(0, 1, 0, 1));
-		PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, 0, i * size), Vector3(0, maxLine * size - size, i * size), Vector4(0, 1, 0, 1));
+	//	//Y (Green)
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(i * size, 0, 0), Vector3(i * size, maxLine * size - size, 0), Vector4(0, 1, 0, 1));
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, 0, i * size), Vector3(0, maxLine * size - size, i * size), Vector4(0, 1, 0, 1));
 
-		//Z (Blue)
-		PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(i * size, 0, 0), Vector3(i * size, 0, maxLine * size - size), Vector4(0, 0, 1, 1));
-		PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, i * size, 0), Vector3(0, i * size, maxLine * size - size), Vector4(0, 0, 1, 1));
-	}
+	//	//Z (Blue)
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(i * size, 0, 0), Vector3(i * size, 0, maxLine * size - size), Vector4(0, 0, 1, 1));
+	//	PrimitiveDrawer::GetInstance()->DrawLine3d(Vector3(0, i * size, 0), Vector3(0, i * size, maxLine * size - size), Vector4(0, 0, 1, 1));
+	//}
 
 	// デバッグテキストの描画
 	debugText_->DrawAll(commandList);
