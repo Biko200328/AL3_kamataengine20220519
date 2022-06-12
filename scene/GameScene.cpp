@@ -5,7 +5,6 @@
 #include "PrimitiveDrawer.h"
 #include <random>
 #include"XMFLOAT3.h"
-#include"MathUtility.h"
 
 GameScene::GameScene()
 {
@@ -21,6 +20,7 @@ GameScene::GameScene()
 GameScene::~GameScene()
 {
 	delete model_;
+	delete debugCamera_;
 }
 
 void GameScene::Initialize() {
@@ -74,9 +74,9 @@ void GameScene::Initialize() {
 	worldTransforms_[99].Initialize();
 
 	viewProjection_.eye = { 0, 10, -20 };
-	viewProjection_.target = worldTransforms_[PartId::Root].translation_;
 
 	viewProjection_.Initialize();
+	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
 }
 
 void GameScene::Update()
@@ -89,13 +89,64 @@ void GameScene::Update()
 
 	if (isMoveChange == false)
 	{
+		const float moveSpeed = 0.05f;
+		const float cameraSpeed = 0.1f;
 		Vector3 frontVec;
-		frontVec = viewProjection_.target -= viewProjection_.eye;
-		Vector3Normalize(frontVec);
+		Vector3 target = viewProjection_.target;
+		frontVec = target -= viewProjection_.eye;
+		MathUtility::Vector3Normalize(frontVec);
+
+		if (input_->PushKey(DIK_UP))
+		{
+			viewProjection_.eye.z += cameraSpeed;
+		}
+		if (input_->PushKey(DIK_DOWN))
+		{
+			viewProjection_.eye.z -= cameraSpeed;
+		}
+		if (input_->PushKey(DIK_RIGHT))
+		{
+			viewProjection_.eye.x += cameraSpeed;
+		}
+		if (input_->PushKey(DIK_LEFT))
+		{
+			viewProjection_.eye.x -= cameraSpeed;
+		}
+
+		/*if (input_->PushKey(DIK_UP))
+		{
+			viewProjection_.eye.x += frontVec.x * moveSpeed;
+			viewProjection_.eye.z += frontVec.z * moveSpeed;
+		}
+		if (input_->PushKey(DIK_DOWN))
+		{
+			viewProjection_.eye.x += -frontVec.x * moveSpeed;
+			viewProjection_.eye.z += -frontVec.z * moveSpeed;
+		}*/
 
 		if (input_->PushKey(DIK_W))
 		{
-			worldTransforms_[PartId::Root].translation_.x += ;
+			worldTransforms_[PartId::Root].translation_.x += frontVec.x * moveSpeed;
+			worldTransforms_[PartId::Root].translation_.z += frontVec.z * moveSpeed;
+		}
+		if (input_->PushKey(DIK_S))
+		{
+			worldTransforms_[PartId::Root].translation_.x += -frontVec.x * moveSpeed;
+			worldTransforms_[PartId::Root].translation_.z += -frontVec.z * moveSpeed;
+		}
+
+		Vector3 rightVec;
+		Vector3 kari = { 0,1,0 };
+		rightVec = MathUtility::Vector3Cross(kari,frontVec);
+		if (input_->PushKey(DIK_D))
+		{
+			worldTransforms_[PartId::Root].translation_.x += rightVec.x * moveSpeed;
+			worldTransforms_[PartId::Root].translation_.z += rightVec.z * moveSpeed;
+		}
+		if (input_->PushKey(DIK_A))
+		{
+			worldTransforms_[PartId::Root].translation_.x += -rightVec.x * moveSpeed;
+			worldTransforms_[PartId::Root].translation_.z += -rightVec.z * moveSpeed;
 		}
 	}
 
@@ -159,6 +210,13 @@ void GameScene::Update()
 	debugText_->SetPos(0, 0);
 	debugText_->Printf(
 		"isMoveChange : %d", isMoveChange);
+
+	debugText_->SetPos(0, 30);
+	debugText_->Printf(
+		"%f,%f,%f", viewProjection_.target.x, viewProjection_.target.y, viewProjection_.target.z);
+
+	//デバッグカメラの更新
+	debugCamera_->Update();
 }
 
 void GameScene::Draw() {
