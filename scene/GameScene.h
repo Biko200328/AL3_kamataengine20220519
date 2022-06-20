@@ -68,6 +68,9 @@ class GameScene {
 	//デバッグカメラ
 	DebugCamera* debugCamera_ = nullptr;
 
+	//カメラ上方向の角度
+	float viewAngle = 0.0f;
+
 	//度数法をラジアンに変更
 	float ChangeRadian(float frequency)
 	{
