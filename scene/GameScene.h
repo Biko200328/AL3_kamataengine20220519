@@ -11,6 +11,7 @@
 #include "WorldTransform.h"
 #include "DebugCamera.h"
 #include "Matrix.h"
+#include"XMFLOAT3.h"
 
 /// <summary>
 /// ゲームシーン
@@ -64,6 +65,10 @@ class GameScene {
 
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
+	float cameraRotSpeed = 0.0f;
+	
+	XMFLOAT3 resultVec = { 0.0f, 0.0f, 0.0f };
+	XMFLOAT3 frontVec = { 0.0f, 0.0f, -1.0f };
 
 	//デバッグカメラ
 	DebugCamera* debugCamera_ = nullptr;

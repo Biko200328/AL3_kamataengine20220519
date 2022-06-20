@@ -4,7 +4,6 @@
 #include "AxisIndicator.h"
 #include "PrimitiveDrawer.h"
 #include <random>
-#include"XMFLOAT3.h"
 
 GameScene::GameScene()
 {
@@ -90,28 +89,10 @@ void GameScene::Update()
 	if (isMoveChange == false)
 	{
 		const float moveSpeed = 0.05f;
-		const float cameraSpeed = 0.1f;
 		Vector3 frontVec;
 		Vector3 target = viewProjection_.target;
 		frontVec = target -= viewProjection_.eye;
 		MathUtility::Vector3Normalize(frontVec);
-
-		if (input_->PushKey(DIK_UP))
-		{
-			viewProjection_.eye.z += cameraSpeed;
-		}
-		if (input_->PushKey(DIK_DOWN))
-		{
-			viewProjection_.eye.z -= cameraSpeed;
-		}
-		if (input_->PushKey(DIK_RIGHT))
-		{
-			viewProjection_.eye.x += cameraSpeed;
-		}
-		if (input_->PushKey(DIK_LEFT))
-		{
-			viewProjection_.eye.x -= cameraSpeed;
-		}
 
 		/*if (input_->PushKey(DIK_UP))
 		{
@@ -186,13 +167,13 @@ void GameScene::Update()
 			worldTransforms_[PartId::Root].translation_.z += kCharacterSpeed * resultVec.z;
 		}
 
-		//カメラのターゲットをプレイヤーにする
-		viewProjection_.target = worldTransforms_[PartId::Root].translation_;
-		//カメラの座標移動
-		const float cameraDis = 15.0f;
-		viewProjection_.eye.x = worldTransforms_[PartId::Root].translation_.x + cameraDis * resultVec.x;
-		viewProjection_.eye.y = 10.0f;
-		viewProjection_.eye.z = worldTransforms_[PartId::Root].translation_.z + cameraDis * resultVec.z;
+		////カメラのターゲットをプレイヤーにする
+		//viewProjection_.target = worldTransforms_[PartId::Root].translation_;
+		////カメラの座標移動
+		//const float cameraDis = 15.0f;
+		//viewProjection_.eye.x = worldTransforms_[PartId::Root].translation_.x + cameraDis * resultVec.x;
+		//viewProjection_.eye.y = 10.0f;
+		//viewProjection_.eye.z = worldTransforms_[PartId::Root].translation_.z + cameraDis * resultVec.z;
 	}
 
 	//UpdateMatrix
@@ -206,6 +187,49 @@ void GameScene::Update()
 	matrix.UpdateMatrix(worldTransforms_[99]);
 
 	viewProjection_.UpdateMatrix();
+	
+
+	if (input_->PushKey(DIK_RIGHT))
+	{
+		cameraRotSpeed += 0.1f;
+	}
+	if (input_->PushKey(DIK_LEFT))
+	{
+		cameraRotSpeed -= 0.1f;
+	}
+
+	//y軸回転をx,zに落とし込む
+	resultVec.x = (
+		cos(cameraRotSpeed) * frontVec.x +
+		sin(cameraRotSpeed) * frontVec.z);
+	resultVec.z =
+		(-sinf(cameraRotSpeed) * frontVec.x +
+			cosf(cameraRotSpeed) * frontVec.z);
+
+	const float cameraSpeed = 0.1f;
+	if (input_->PushKey(DIK_UP))
+	{
+		viewProjection_.eye.x -= cameraSpeed * resultVec.x;
+		viewProjection_.eye.z -= cameraSpeed * resultVec.z;
+		viewProjection_.target.x -= cameraSpeed * resultVec.x;
+		viewProjection_.target.z -= cameraSpeed * resultVec.z;
+	}
+	if (input_->PushKey(DIK_DOWN))
+	{
+		viewProjection_.eye.x += cameraSpeed * resultVec.x;
+		viewProjection_.eye.z += cameraSpeed * resultVec.z;
+		viewProjection_.target.x += cameraSpeed * resultVec.x;
+		viewProjection_.target.z += cameraSpeed * resultVec.z;
+	}
+
+	//カメラの座標移動
+	const float cameraDis = 20.0f;
+	viewProjection_.eye.x = cameraDis * resultVec.x;
+	viewProjection_.eye.y = 10.0f;
+	viewProjection_.eye.z = cameraDis * resultVec.z;
+
+	//デバッグカメラの更新
+	debugCamera_->Update();
 
 	debugText_->SetPos(0, 0);
 	debugText_->Printf(
@@ -213,10 +237,11 @@ void GameScene::Update()
 
 	debugText_->SetPos(0, 30);
 	debugText_->Printf(
-		"%f,%f,%f", viewProjection_.target.x, viewProjection_.target.y, viewProjection_.target.z);
+		"target:%f,%f,%f", viewProjection_.target.x, viewProjection_.target.y, viewProjection_.target.z);
 
-	//デバッグカメラの更新
-	debugCamera_->Update();
+	debugText_->SetPos(0, 60);
+	debugText_->Printf(
+		"eye:%f,%f,%f", viewProjection_.eye.x, viewProjection_.eye.y, viewProjection_.eye.z);
 }
 
 void GameScene::Draw() {
