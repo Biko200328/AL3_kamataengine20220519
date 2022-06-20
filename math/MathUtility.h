@@ -20,6 +20,9 @@ float Vector3Dot(const Vector3& v1, const Vector3& v2);
 // 外積を求める
 Vector3 Vector3Cross(const Vector3& v1, const Vector3& v2);
 
+//クランプ
+float Clamp(float Value, float max, float min);
+
 // 2項演算子オーバーロード
 const Vector3 operator+(const Vector3& v1, const Vector3& v2);
 const Vector3 operator-(const Vector3& v1, const Vector3& v2);
