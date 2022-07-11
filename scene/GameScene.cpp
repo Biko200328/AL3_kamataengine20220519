@@ -7,12 +7,7 @@
 
 GameScene::GameScene()
 {
-	//ファイル名を指定してテクスチャを読み込む
-	textureHandle_ = TextureManager::Load("mario.jpg");
-	//3Dモデルの生成
-	model_ = Model::Create();
-	//デバッグカメラの生成
-debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
+	
 }
 
 GameScene::~GameScene()
@@ -23,7 +18,12 @@ GameScene::~GameScene()
 }
 
 void GameScene::Initialize() {
-
+	//ファイル名を指定してテクスチャを読み込む
+	textureHandle_ = TextureManager::Load("mario.jpg");
+	//3Dモデルの生成
+	model_ = Model::Create();
+	//デバッグカメラの生成
+	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
 	dxCommon_ = DirectXCommon::GetInstance();
 	input_ = Input::GetInstance();
 	audio_ = Audio::GetInstance();
@@ -89,9 +89,8 @@ void GameScene::Draw() {
 	/// </summary>
 
 	//3Dモデル描画
+	player_->Draw(viewProjection_);
 	
-	//自キャラの描画
-	player_->Update();
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
@@ -104,6 +103,8 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに前景スプライトの描画処理を追加できる
 	/// </summary>
+
+
 
 	//int maxLine = 32;
 	//int size = 1;

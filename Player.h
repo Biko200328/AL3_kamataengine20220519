@@ -5,6 +5,7 @@
 #include "Input.h"
 #include <cassert>
 #include "Matrix.h"
+#include "ViewProjection.h"
 
 class Player
 {
@@ -16,9 +17,10 @@ public:
 	void Update();
 
 	//描画
-	void Draw();
+	void Draw(ViewProjection viewProjection_);
 
 private:
+	
 	//ワールド変換データ
 	WorldTransform worldtransform_;
 
@@ -36,5 +38,7 @@ private:
 
 	//マトリックス
 	Matrix matrix_;
+
+	void Move();
 };
 
