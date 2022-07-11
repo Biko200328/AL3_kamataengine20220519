@@ -6,6 +6,7 @@
 #include <cassert>
 #include "Matrix.h"
 #include "ViewProjection.h"
+#include "PlayerBullet.h"
 
 class Player
 {
@@ -17,7 +18,7 @@ public:
 	void Update();
 
 	//描画
-	void Draw(ViewProjection viewProjection_);
+	void Draw(const ViewProjection& viewProjection_);
 
 private:
 	
@@ -39,6 +40,16 @@ private:
 	//マトリックス
 	Matrix matrix_;
 
+	//弾
+	PlayerBullet* bullet_ = nullptr;
+
+	//移動
 	void Move();
+
+	//回転
+	void Rotate();
+
+	//攻撃
+	void Attack();
 };
 

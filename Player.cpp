@@ -18,16 +18,33 @@ void Player::Initialize(Model* model, uint32_t textureHandle)
 
 void Player::Update()
 {
+	//キャラクターの移動
 	Move();
+	//キャラクターの旋回処理
+	Rotate();
+	//キャラクターの攻撃処理
+	Attack();
+
+	//弾更新
+	if (bullet_)
+	{
+		bullet_->Update();
+	}
 }
 
-void Player::Draw(ViewProjection viewProjection_)
+void Player::Draw(const ViewProjection& viewProjection_)
 {
 	debugText_->SetPos(30, 10);
 	debugText_->Printf("pos : (%f,%f,%f)", worldtransform_.translation_.x, worldtransform_.translation_.y, worldtransform_.translation_.z);
 
 	//3Dモデルを描画
 	model_->Draw(worldtransform_, viewProjection_, textureHandle_);
+
+	//弾描画
+	if (bullet_)
+	{
+		bullet_->Draw(viewProjection_);
+	}
 }
 
 void Player::Move()
@@ -36,16 +53,14 @@ void Player::Move()
 	Vector3 move = { 0,0,0 };
 	//移動スピード
 	const float moveSpeed = 0.3f;
-
+	//押した方向に動く
 	move.y += (input_->PushKey(DIK_W) - input_->PushKey(DIK_S)) * moveSpeed;
 	move.x += (input_->PushKey(DIK_D) - input_->PushKey(DIK_A)) * moveSpeed;
-
+	//代入
 	worldtransform_.translation_ += move;
-
 	//移動制限座標
 	const float kMoveLimitX = 34;
 	const float kMoveLimitY = 19;
-
 	//範囲を超えない処理
 	worldtransform_.translation_.x = max(worldtransform_.translation_.x, -kMoveLimitX);
 	worldtransform_.translation_.x = min(worldtransform_.translation_.x, kMoveLimitX);
@@ -53,4 +68,31 @@ void Player::Move()
 	worldtransform_.translation_.y = min(worldtransform_.translation_.y, kMoveLimitY);
 
 	matrix_.UpdateMatrix(worldtransform_);
+}
+
+void Player::Rotate()
+{
+	//キャラクターの回転ベクトル
+	Vector3 rot = { 0,0,0 };
+	//回転スピード
+	const float rotSpeed = 0.05f;
+	//押した方向に回転する
+	rot.y += (input_->PushKey(DIK_RIGHT) - input_->PushKey(DIK_LEFT)) * rotSpeed;
+	//代入
+	worldtransform_.rotation_ += rot;
+
+	matrix_.UpdateMatrix(worldtransform_);
+}
+
+void Player::Attack()
+{
+	if (input_->TriggerKey(DIK_SPACE))
+	{
+		//弾を生成し、初期化
+		PlayerBullet* newBullet = new PlayerBullet();
+		newBullet->Initialize(model_, worldtransform_.translation_);
+
+		//弾を登録する
+		bullet_ = newBullet;
+	}
 }
