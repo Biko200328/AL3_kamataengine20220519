@@ -11,6 +11,7 @@
 #include "WorldTransform.h"
 #include "DebugCamera.h"
 #include "Matrix.h"
+#include "Player.h"
 
 /// <summary>
 /// ゲームシーン
@@ -59,9 +60,6 @@ class GameScene {
 	//3Dモデル
 	Model* model_ = nullptr;
 
-	//ワールドトランスフォーム
-	WorldTransform worldTransforms_[100];
-
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
 
@@ -70,6 +68,9 @@ class GameScene {
 
 	//カメラ上方向の角度
 	float viewAngle = 0.0f;
+
+	//自キャラ
+	Player* player_ = nullptr;
 
 	//度数法をラジアンに変更
 	float ChangeRadian(float frequency)
