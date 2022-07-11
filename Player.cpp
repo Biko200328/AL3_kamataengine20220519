@@ -35,15 +35,22 @@ void Player::Move()
 	//キャラクターの移動ベクトル
 	Vector3 move = { 0,0,0 };
 	//移動スピード
-	const float moveSpeed = 0.4f;
+	const float moveSpeed = 0.3f;
 
-	/*move.z += input_->PushKey(DIK_W) - input_->PushKey(DIK_S);
-	move.x += input_->PushKey(DIK_D) - input_->PushKey(DIK_A);*/
+	move.y += (input_->PushKey(DIK_W) - input_->PushKey(DIK_S)) * moveSpeed;
+	move.x += (input_->PushKey(DIK_D) - input_->PushKey(DIK_A)) * moveSpeed;
 
-	if (input_->PushKey(DIK_W))
-	{
-		move.z += moveSpeed;
-	}
+	worldtransform_.translation_ += move;
+
+	//移動制限座標
+	const float kMoveLimitX = 34;
+	const float kMoveLimitY = 19;
+
+	//範囲を超えない処理
+	worldtransform_.translation_.x = max(worldtransform_.translation_.x, -kMoveLimitX);
+	worldtransform_.translation_.x = min(worldtransform_.translation_.x, kMoveLimitX);
+	worldtransform_.translation_.y = max(worldtransform_.translation_.y, -kMoveLimitY);
+	worldtransform_.translation_.y = min(worldtransform_.translation_.y, kMoveLimitY);
 
 	matrix_.UpdateMatrix(worldtransform_);
 }

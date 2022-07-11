@@ -55,10 +55,34 @@ void GameScene::Initialize() {
 
 void GameScene::Update()
 {
-	debugCamera_->Update();
-
 	//自キャラの更新
 	player_->Update();
+
+#ifdef _DEBUG
+	if (input_->TriggerKey(DIK_P))
+	{
+		if (isDebugCameraActive_ == false)isDebugCameraActive_ = true;
+		else isDebugCameraActive_ = false;
+	}
+#endif
+
+	if (isDebugCameraActive_)
+	{
+		debugCamera_->Update();
+		//カメラのビュープロジェクション
+		ViewProjection debugCameraViewProjection_;
+
+		debugCameraViewProjection_ = debugCamera_->GetViewProjection();
+
+		viewProjection_.matView = debugCameraViewProjection_.matView;
+		viewProjection_.matProjection = debugCameraViewProjection_.matProjection;
+		viewProjection_.TransferMatrix();
+	}
+	else
+	{
+		viewProjection_.UpdateMatrix();
+		viewProjection_.TransferMatrix();
+	}
 }
 
 void GameScene::Draw() {
@@ -90,7 +114,8 @@ void GameScene::Draw() {
 
 	//3Dモデル描画
 	player_->Draw(viewProjection_);
-	
+	debugText_->SetPos(10, 60);
+	debugText_->Printf("isDebugCameraActive_ : %d", isDebugCameraActive_);
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
