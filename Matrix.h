@@ -31,5 +31,8 @@ public:
 	void ChangeTrans(WorldTransform worldTransform);
 
 	void UpdateMatrix(WorldTransform& worldTransform);
+
+	//ベクトルと行列の掛け算
+	Vector3 Operator(const Vector3& v, const Matrix4& m);
 };
 

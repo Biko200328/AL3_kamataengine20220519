@@ -30,6 +30,12 @@ void Player::Update()
 	{
 		bullet->Update();
 	}
+
+	//デスフラグの立った弾を削除
+	bullets_.remove_if([](std::unique_ptr<PlayerBullet>& bullet)
+		{
+			return bullet->IsDead();
+		});
 }
 
 void Player::Draw(const ViewProjection& viewProjection_)
@@ -88,9 +94,16 @@ void Player::Attack()
 {
 	if (input_->TriggerKey(DIK_SPACE))
 	{
+		//弾の速度
+		const float kBulletSpeed = 1.0f;
+		Vector3 velocity(0, 0, kBulletSpeed);
+
+		//速度ベクトルを自機の向きに合わせて回転させる
+		velocity = matrix_.Operator(velocity, worldtransform_.matWorld_);
+
 		//弾を生成し、初期化
 		std::unique_ptr<PlayerBullet> newBullet = std::make_unique<PlayerBullet>();
-		newBullet->Initialize(model_, worldtransform_.translation_);
+		newBullet->Initialize(model_, worldtransform_.translation_,velocity);
 
 		//弾を登録する
 		bullets_.push_back(std::move(newBullet));
