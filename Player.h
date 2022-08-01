@@ -7,6 +7,8 @@
 #include "Matrix.h"
 #include "ViewProjection.h"
 #include "PlayerBullet.h"
+#include <memory>
+#include <list>
 
 class Player
 {
@@ -41,7 +43,7 @@ private:
 	Matrix matrix_;
 
 	//’e
-	PlayerBullet* bullet_ = nullptr;
+	std::list<std::unique_ptr<PlayerBullet>> bullets_;
 
 	//ˆÚ“®
 	void Move();

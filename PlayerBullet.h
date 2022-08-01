@@ -6,6 +6,7 @@
 #include <cassert>
 #include "Matrix.h"
 #include "ViewProjection.h"
+
 class PlayerBullet
 {
 public:
